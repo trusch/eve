@@ -23,8 +23,8 @@ package main
 import (
 	"log"
 
-	"github.com/trusch/bobbyd/cmd"
-	_ "github.com/trusch/bobbyd/middleware/builtin"
+	"github.com/trusch/eve/cmd"
+	_ "github.com/trusch/eve/middleware/builtin"
 )
 
 func main() {

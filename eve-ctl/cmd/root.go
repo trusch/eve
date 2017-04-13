@@ -27,7 +27,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/trusch/bobbyd/config/etcd"
+	"github.com/trusch/eve/config/etcd"
 )
 
 var cfgFile string
@@ -36,9 +36,9 @@ var client *etcd.Client
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "bobbyd-ctl",
-	Short: "bobbyd-ctl controls your bobbyd.",
-	Long:  `bobbyd-ctl controls your bobbyd.`,
+	Use:   "eve-ctl",
+	Short: "eve-ctl controls your eve.",
+	Long:  `eve-ctl controls your eve.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -56,13 +56,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initClient)
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bobbyd-ctl.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eve-ctl.yaml)")
 	RootCmd.PersistentFlags().String("etcd", "127.0.0.1:2379", "etcd address")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	viper.SetConfigName(".bobbyd-ctl") // name of config file (without extension)
+	viper.SetConfigName(".eve-ctl") // name of config file (without extension)
 	viper.AddConfigPath("$HOME")       // adding home directory as first search path
 	viper.AutomaticEnv()               // read in environment variables that match
 

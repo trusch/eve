@@ -81,7 +81,9 @@ func (srv *Server) ListenAndServeHTTP() error {
 	if err != nil {
 		return err
 	}
+	log.Print("created HTTP listener")
 	go srv.httpServer.Serve(ln)
+	log.Print("started HTTP server")
 	return nil
 }
 

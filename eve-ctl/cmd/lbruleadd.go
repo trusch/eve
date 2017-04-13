@@ -22,35 +22,30 @@ package cmd
 
 import (
 	"log"
-	"encoding/json"
+	"github.com/trusch/eve/loadbalancer/rule"
 	"github.com/spf13/cobra"
-	"github.com/trusch/bobbyd/middleware/rule"
 )
 
-// mwputCmd represents the mwput command
-var mwputCmd = &cobra.Command{
+// lbruleaddCmd represents the lbruleadd command
+var lbruleaddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add a middleware rule",
-	Long: `add a middleware rule`,
+	Short: "add a loadbalancer rule",
+	Long: `add a loadbalancer rule`,
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetString("id")
+		target, _ := cmd.Flags().GetString("target")
 		route, _ := cmd.Flags().GetString("route")
-		middlewareStr, _ := cmd.Flags().GetString("middleware")
-		if route == "" || id == "" || middlewareStr == "" {
-			log.Fatal("specify --route, --id and --middleware")
+		if target == "" || id == "" || route == "" {
+			log.Fatal("specify --target, --id and --route")
 		}
-		mwRule := &rule.Rule{ID: id, Route: route}
-		if err := json.Unmarshal([]byte(middlewareStr), &mwRule.Middlewares); err != nil {
-			log.Fatal(err)
-		}
-		if err := client.PutMwRule(mwRule, true); err != nil {
+		if err := client.PutLbRule(&rule.Rule{ID: id, Target: target, Route: route}, true); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
 func init() {
-	middlewareCmd.AddCommand(mwputCmd)
-	mwputCmd.Flags().StringP("route","r","","routing rule")
-	mwputCmd.Flags().StringP("middleware","m","","json array describing middleware chain")
+	ruleCmd.AddCommand(lbruleaddCmd)
+	lbruleaddCmd.Flags().StringP("target", "t", "", "target loadbalancer")
+	lbruleaddCmd.Flags().StringP("route", "r", "", "routing rule (i.e. Host(\"foo.example.tld\"))")
 }

@@ -10,14 +10,14 @@ import (
 	"github.com/coreos/etcd/clientv3"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/trusch/bobbyd/config"
-	lbRule "github.com/trusch/bobbyd/loadbalancer/rule"
-	mwRule "github.com/trusch/bobbyd/middleware/rule"
+	"github.com/trusch/eve/config"
+	lbRule "github.com/trusch/eve/loadbalancer/rule"
+	mwRule "github.com/trusch/eve/middleware/rule"
 )
 
 // GetLoadbalancerRules returns a slice of all loadbalancer rules
 func (client *Client) GetLoadbalancerRules() ([]*lbRule.Rule, error) {
-	resp, err := client.v3.Get(client.ctx, "/bobbyd/lbrules", clientv3.WithPrefix())
+	resp, err := client.v3.Get(client.ctx, "/eve/lbrules", clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (client *Client) GetLoadbalancerRules() ([]*lbRule.Rule, error) {
 
 // GetMiddlewareRules returns a slice of all middleware rules
 func (client *Client) GetMiddlewareRules() ([]*mwRule.Rule, error) {
-	resp, err := client.v3.Get(client.ctx, "/bobbyd/mwrules", clientv3.WithPrefix())
+	resp, err := client.v3.Get(client.ctx, "/eve/mwrules", clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (client *Client) GetMiddlewareRules() ([]*mwRule.Rule, error) {
 
 // GetHostConfigs returns a slice of all host configs
 func (client *Client) GetHostConfigs() ([]*config.HostConfig, error) {
-	resp, err := client.v3.Get(client.ctx, "/bobbyd/loadbalancer", clientv3.WithPrefix())
+	resp, err := client.v3.Get(client.ctx, "/eve/loadbalancer", clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (client *Client) GetHostConfigs() ([]*config.HostConfig, error) {
 
 // GetCertConfigs returns a slice of all cert configs
 func (client *Client) GetCertConfigs() ([]*config.CertConfig, error) {
-	resp, err := client.v3.Get(client.ctx, "/bobbyd/certs", clientv3.WithPrefix())
+	resp, err := client.v3.Get(client.ctx, "/eve/certs", clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (client *Client) parseLbRule(kv *mvccpb.KeyValue) (*lbRule.Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing LB-rule: %v", err)
 	}
-	rule.ID = string(kv.Key[len("/bobbyd/lbrules/"):])
+	rule.ID = string(kv.Key[len("/eve/lbrules/"):])
 	return rule, nil
 }
 
@@ -103,7 +103,7 @@ func (client *Client) parseMwRule(kv *mvccpb.KeyValue) (*mwRule.Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing MW-rule: %v", err)
 	}
-	rule.ID = string(kv.Key[len("/bobbyd/mwrules/"):])
+	rule.ID = string(kv.Key[len("/eve/mwrules/"):])
 	return rule, nil
 }
 
@@ -113,12 +113,12 @@ func (client *Client) parseCertConfig(kv *mvccpb.KeyValue) (*config.CertConfig, 
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing certificate: %v", err)
 	}
-	cfg.ID = string(kv.Key[len("/bobbyd/certs/"):])
+	cfg.ID = string(kv.Key[len("/eve/certs/"):])
 	return cfg, nil
 }
 
 func (client *Client) parseHostConfig(kv *mvccpb.KeyValue) (*config.HostConfig, error) {
-	// /bobbyd/loadbalancer/example-lb/hosts/foobar http://123.123.123.123:8080
+	// /eve/loadbalancer/example-lb/hosts/foobar http://123.123.123.123:8080
 	parts := strings.Split(string(kv.Key), "/")
 	if len(parts) != 6 {
 		return nil, errors.New("malformed key")

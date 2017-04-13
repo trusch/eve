@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/trusch/bobbyd/middleware"
-	"github.com/trusch/bobbyd/middleware/registry"
+	"github.com/trusch/eve/middleware"
+	"github.com/trusch/eve/middleware/registry"
 	"github.com/vulcand/oxy/trace"
 )
 

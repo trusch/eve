@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/trusch/bobbyd/middleware"
+	"github.com/trusch/eve/middleware"
 )
 
 var (

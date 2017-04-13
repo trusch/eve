@@ -7,8 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/trusch/bobbyd/config"
-	"github.com/trusch/bobbyd/loadbalancer/rule"
+	"github.com/trusch/eve/config"
+	"github.com/trusch/eve/loadbalancer/rule"
 )
 
 // ConfigSource reads docker labels and updates lb rules and hosts accordingly
@@ -27,6 +27,15 @@ func New() (*ConfigSource, error) {
 		cli:    c,
 		output: make(chan *config.Action, 32),
 	}
+	containers, err := c.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, container := range containers {
+		if host := checkForeveHostLabel(container.Labels); host != "" {
+			res.handleStart(container.ID, host)
+		}
+	}
 	go res.backend()
 	return res, nil
 }
@@ -37,34 +46,23 @@ func (src *ConfigSource) GetChannel() chan *config.Action {
 }
 
 func (src *ConfigSource) backend() {
-	containers, err := src.cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		log.Print(err)
-	}
-	for _, container := range containers {
-		if host := checkForBobbydHostLabel(container.Labels); host != "" {
-			src.handleStart(container.ID, host)
-		}
-	}
-
 	events, _ := src.cli.Events(context.Background(), types.EventsOptions{})
 	for event := range events {
 		if event.Action == "start" {
-			if host := checkForBobbydHostLabel(event.Actor.Attributes); host != "" {
+			if host := checkForeveHostLabel(event.Actor.Attributes); host != "" {
 				src.handleStart(event.Actor.ID, host)
 			}
 		} else if event.Action == "die" {
-			if host := checkForBobbydHostLabel(event.Actor.Attributes); host != "" {
+			if host := checkForeveHostLabel(event.Actor.Attributes); host != "" {
 				src.handleStop(event.Actor.ID, host)
 			}
 		}
 	}
-
 }
 
-func checkForBobbydHostLabel(labels map[string]string) string {
+func checkForeveHostLabel(labels map[string]string) string {
 	for key, val := range labels {
-		if key == "bobbyd.host" {
+		if key == "eve.host" {
 			return val
 		}
 	}

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/trusch/bobbyd/config"
-	"github.com/trusch/bobbyd/loadbalancer/rule"
+	"github.com/trusch/eve/config"
+	"github.com/trusch/eve/loadbalancer/rule"
 	"github.com/vulcand/oxy/forward"
 	"github.com/vulcand/oxy/roundrobin"
 )

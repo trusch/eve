@@ -27,20 +27,20 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/trusch/bobbyd/config"
-	"github.com/trusch/bobbyd/config/docker"
-	"github.com/trusch/bobbyd/config/etcd"
-	"github.com/trusch/bobbyd/handler"
-	"github.com/trusch/bobbyd/server"
+	"github.com/trusch/eve/config"
+	"github.com/trusch/eve/config/docker"
+	"github.com/trusch/eve/config/etcd"
+	"github.com/trusch/eve/handler"
+	"github.com/trusch/eve/server"
 )
 
 var cfgFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "BobbyD",
-	Short: "a distributed container proxy",
-	Long: `BobbyD is a distributed container proxy.
+	Use:   "eve",
+	Short: "eve is a virtual entrypoint",
+	Long: `eve is a virtual entrypoint.
 
 You can use it to proxy http connections in your container cluster with minimal effort.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -68,18 +68,20 @@ You can use it to proxy http connections in your container cluster with minimal 
 		if etcdAddr != "" {
 			cli, err := etcd.NewClient(etcdAddr)
 			if err != nil {
-				log.Fatal(err)
+				log.Print(err)
+			} else {
+				configSrcConfigured = true
+				go supplyConfig(cli, h, srv)
 			}
-			configSrcConfigured = true
-			go supplyConfig(cli, h, srv)
 		}
 		if viper.GetBool("docker") {
 			cli, err := docker.New()
 			if err != nil {
-				log.Fatal(err)
+				log.Print(err)
+			} else {
+				configSrcConfigured = true
+				go supplyConfig(cli, h, srv)
 			}
-			configSrcConfigured = true
-			go supplyConfig(cli, h, srv)
 		}
 		if !configSrcConfigured {
 			log.Fatal("specify at least one config source: --docker or --etcd='<etcd-address>'")
@@ -101,16 +103,16 @@ func init() {
 	RootCmd.Flags().String("http", ":80", "HTTP Address")
 	RootCmd.Flags().String("https", ":443", "HTTPS Address")
 	RootCmd.Flags().String("etcd", "127.0.0.1:2379", "etcd server address")
-	RootCmd.Flags().Bool("docker", false, "listen for docker events")
+	RootCmd.Flags().Bool("docker", true, "listen for docker events")
 	RootCmd.Flags().String("password", "", "certificate seal password")
-	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bobbyd.yaml)")
+	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eve.yaml)")
 	viper.BindPFlags(RootCmd.Flags())
 }
 
 func initConfig() {
-	viper.SetConfigName(".bobbyd") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")   // adding home directory as first search path
-	viper.AutomaticEnv()           // read in environment variables that match
+	viper.SetConfigName(".eve")  // name of config file (without extension)
+	viper.AddConfigPath("$HOME") // adding home directory as first search path
+	viper.AutomaticEnv()         // read in environment variables that match
 
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)

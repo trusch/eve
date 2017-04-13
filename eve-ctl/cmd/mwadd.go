@@ -22,50 +22,35 @@ package cmd
 
 import (
 	"log"
-	"io/ioutil"
-
+	"encoding/json"
 	"github.com/spf13/cobra"
-	"github.com/trusch/bobbyd/config"
+	"github.com/trusch/eve/middleware/rule"
 )
 
-// certaddCmd represents the certadd command
-var certaddCmd = &cobra.Command{
+// mwputCmd represents the mwput command
+var mwputCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add a certificate",
-	Long: `add a certificate`,
+	Short: "add a middleware rule",
+	Long: `add a middleware rule`,
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetString("id")
-		certPath, _ := cmd.Flags().GetString("cert")
-		keyPath, _ := cmd.Flags().GetString("key")
-		password, _ := cmd.Flags().GetString("password")
-		if id==""||certPath==""||keyPath==""||password==""{
-			log.Fatal("specify --id, --cert, --key and --password")
+		route, _ := cmd.Flags().GetString("route")
+		middlewareStr, _ := cmd.Flags().GetString("middleware")
+		if route == "" || id == "" || middlewareStr == "" {
+			log.Fatal("specify --route, --id and --middleware")
 		}
-		certBs, err := ioutil.ReadFile(certPath)
-		if err != nil {
-			log.Fatal("can not read certificate file")
-		}
-		keyBs, err := ioutil.ReadFile(keyPath)
-		if err != nil {
-			log.Fatal("can not read key file")
-		}
-		certConfig := &config.CertConfig{
-			ID: id,
-			CertPem: string(certBs),
-			KeyPem: string(keyBs),
-		}
-		if err = certConfig.Encrypt(password); err != nil {
+		mwRule := &rule.Rule{ID: id, Route: route}
+		if err := json.Unmarshal([]byte(middlewareStr), &mwRule.Middlewares); err != nil {
 			log.Fatal(err)
 		}
-		if err = client.PutCertConfig(certConfig, true); err != nil {
+		if err := client.PutMwRule(mwRule, true); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
 func init() {
-	certCmd.AddCommand(certaddCmd)
-	certaddCmd.Flags().String("cert", "", "certificate path")
-	certaddCmd.Flags().String("key", "", "key path")
-	certaddCmd.Flags().String("password", "", "password to encrypt data")
+	middlewareCmd.AddCommand(mwputCmd)
+	mwputCmd.Flags().StringP("route","r","","routing rule")
+	mwputCmd.Flags().StringP("middleware","m","","json array describing middleware chain")
 }

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
-	"github.com/trusch/bobbyd/config"
-	lbRule "github.com/trusch/bobbyd/loadbalancer/rule"
-	mwRule "github.com/trusch/bobbyd/middleware/rule"
+	"github.com/trusch/eve/config"
+	lbRule "github.com/trusch/eve/loadbalancer/rule"
+	mwRule "github.com/trusch/eve/middleware/rule"
 )
 
 // Client is a etcd backed config.Stream

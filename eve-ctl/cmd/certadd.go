@@ -22,30 +22,50 @@ package cmd
 
 import (
 	"log"
-	"github.com/trusch/bobbyd/loadbalancer/rule"
+	"io/ioutil"
+
 	"github.com/spf13/cobra"
+	"github.com/trusch/eve/config"
 )
 
-// lbruleaddCmd represents the lbruleadd command
-var lbruleaddCmd = &cobra.Command{
+// certaddCmd represents the certadd command
+var certaddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add a loadbalancer rule",
-	Long: `add a loadbalancer rule`,
+	Short: "add a certificate",
+	Long: `add a certificate`,
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetString("id")
-		target, _ := cmd.Flags().GetString("target")
-		route, _ := cmd.Flags().GetString("route")
-		if target == "" || id == "" || route == "" {
-			log.Fatal("specify --target, --id and --route")
+		certPath, _ := cmd.Flags().GetString("cert")
+		keyPath, _ := cmd.Flags().GetString("key")
+		password, _ := cmd.Flags().GetString("password")
+		if id==""||certPath==""||keyPath==""||password==""{
+			log.Fatal("specify --id, --cert, --key and --password")
 		}
-		if err := client.PutLbRule(&rule.Rule{ID: id, Target: target, Route: route}, true); err != nil {
+		certBs, err := ioutil.ReadFile(certPath)
+		if err != nil {
+			log.Fatal("can not read certificate file")
+		}
+		keyBs, err := ioutil.ReadFile(keyPath)
+		if err != nil {
+			log.Fatal("can not read key file")
+		}
+		certConfig := &config.CertConfig{
+			ID: id,
+			CertPem: string(certBs),
+			KeyPem: string(keyBs),
+		}
+		if err = certConfig.Encrypt(password); err != nil {
+			log.Fatal(err)
+		}
+		if err = client.PutCertConfig(certConfig, true); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
 func init() {
-	ruleCmd.AddCommand(lbruleaddCmd)
-	lbruleaddCmd.Flags().StringP("target", "t", "", "target loadbalancer")
-	lbruleaddCmd.Flags().StringP("route", "r", "", "routing rule (i.e. Host(\"foo.example.tld\"))")
+	certCmd.AddCommand(certaddCmd)
+	certaddCmd.Flags().String("cert", "", "certificate path")
+	certaddCmd.Flags().String("key", "", "key path")
+	certaddCmd.Flags().String("password", "", "password to encrypt data")
 }

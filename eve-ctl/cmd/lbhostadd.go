@@ -23,7 +23,7 @@ package cmd
 import (
 	"log"
 	"github.com/spf13/cobra"
-	"github.com/trusch/bobbyd/config"
+	"github.com/trusch/eve/config"
 )
 
 // lbhostaddCmd represents the lbhostadd command

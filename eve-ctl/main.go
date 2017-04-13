@@ -20,7 +20,7 @@
 
 package main
 
-import "github.com/trusch/bobbyd/bobbyd-ctl/cmd"
+import "github.com/trusch/eve/eve-ctl/cmd"
 
 func main() {
 	cmd.Execute()
