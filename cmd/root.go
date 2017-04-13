@@ -27,27 +27,27 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/trusch/yap/config"
-
-	"github.com/trusch/yap/config/etcd"
-	"github.com/trusch/yap/handler"
-	"github.com/trusch/yap/server"
+	"github.com/trusch/bobbyd/config"
+	"github.com/trusch/bobbyd/config/docker"
+	"github.com/trusch/bobbyd/config/etcd"
+	"github.com/trusch/bobbyd/handler"
+	"github.com/trusch/bobbyd/server"
 )
 
 var cfgFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "yap",
-	Short: "yet another proxy",
-	Long:  `yet another proxy.`,
+	Use:   "BobbyD",
+	Short: "a distributed container proxy",
+	Long: `BobbyD is a distributed container proxy.
+
+You can use it to proxy http connections in your container cluster with minimal effort.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		httpAddr := viper.GetString("http")
 		httpsAddr := viper.GetString("https")
-		etcdAddr := viper.GetString("etcd")
 
 		h := handler.New()
-		go supplyConfig(h, etcdAddr)
 
 		srv, err := server.New(h, httpAddr, httpsAddr)
 		if err != nil {
@@ -60,6 +60,29 @@ var RootCmd = &cobra.Command{
 		err = srv.ListenAndServeHTTPS()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		configSrcConfigured := false
+
+		etcdAddr := viper.GetString("etcd")
+		if etcdAddr != "" {
+			cli, err := etcd.NewClient(etcdAddr)
+			if err != nil {
+				log.Fatal(err)
+			}
+			configSrcConfigured = true
+			go supplyConfig(cli, h, srv)
+		}
+		if viper.GetBool("docker") {
+			cli, err := docker.New()
+			if err != nil {
+				log.Fatal(err)
+			}
+			configSrcConfigured = true
+			go supplyConfig(cli, h, srv)
+		}
+		if !configSrcConfigured {
+			log.Fatal("specify at least one config source: --docker or --etcd='<etcd-address>'")
 		}
 		select {}
 	},
@@ -75,17 +98,19 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.yap.yaml)")
 	RootCmd.Flags().String("http", ":80", "HTTP Address")
 	RootCmd.Flags().String("https", ":443", "HTTPS Address")
 	RootCmd.Flags().String("etcd", "127.0.0.1:2379", "etcd server address")
+	RootCmd.Flags().Bool("docker", false, "listen for docker events")
+	RootCmd.Flags().String("password", "", "certificate seal password")
+	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bobbyd.yaml)")
 	viper.BindPFlags(RootCmd.Flags())
 }
 
 func initConfig() {
-	viper.SetConfigName(".yap")  // name of config file (without extension)
-	viper.AddConfigPath("$HOME") // adding home directory as first search path
-	viper.AutomaticEnv()         // read in environment variables that match
+	viper.SetConfigName(".bobbyd") // name of config file (without extension)
+	viper.AddConfigPath("$HOME")   // adding home directory as first search path
+	viper.AutomaticEnv()           // read in environment variables that match
 
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
@@ -97,12 +122,8 @@ func initConfig() {
 	}
 }
 
-func supplyConfig(handler *handler.Handler, etcdAddr string) {
-	cli, err := etcd.NewClient(etcdAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for action := range cli.GetChannel() {
+func supplyConfig(src config.Stream, handler *handler.Handler, srv *server.Server) {
+	for action := range src.GetChannel() {
 		switch action.Type {
 		case config.UpsertLbRule:
 			{
@@ -119,17 +140,41 @@ func supplyConfig(handler *handler.Handler, etcdAddr string) {
 				log.Print("upsert host: ", action.HostConfig)
 				handler.LBManager.UpsertServer(action.HostConfig)
 			}
+		case config.UpsertCert:
+			{
+				log.Print("upsert cert: ", action.CertConfig.ID)
+				cfg := action.CertConfig
+				if err := cfg.Decrypt(viper.GetString("password")); err != nil {
+					log.Print(err)
+					continue
+				}
+				srv.AddCertificate(cfg.ID, cfg.CertPem, cfg.KeyPem)
+				if err := srv.ListenAndServeHTTPS(); err != nil {
+					log.Print(err)
+				}
+			}
 		case config.DeleteLbRule:
 			{
+				log.Print("delete lb rule: ", action.LbRule)
 				handler.LBManager.RemoveRule(action.LbRule.ID)
 			}
 		case config.DeleteMwRule:
 			{
+				log.Print("delete mw rule: ", action.MwRule)
 				handler.MWManager.RemoveRule(action.MwRule.ID)
 			}
 		case config.DeleteHost:
 			{
+				log.Print("delete host: ", action.HostConfig)
 				handler.LBManager.RemoveServer(action.HostConfig)
+			}
+		case config.DeleteCert:
+			{
+				log.Print("delete cert: ", action.CertConfig)
+				srv.RemoveCertificate(action.CertConfig.ID)
+				if err := srv.ListenAndServeHTTPS(); err != nil {
+					log.Print(err)
+				}
 			}
 		}
 	}
