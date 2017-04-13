@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	loadbalancer "github.com/trusch/yap/loadbalancer/manager"
-	middleware "github.com/trusch/yap/middleware/manager"
+	loadbalancer "github.com/trusch/bobbyd/loadbalancer/manager"
+	middleware "github.com/trusch/bobbyd/middleware/manager"
 )
 
 // Handler is the global http request handler

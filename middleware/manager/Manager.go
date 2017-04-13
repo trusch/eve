@@ -3,8 +3,8 @@ package manager
 import (
 	"net/http"
 
-	"github.com/trusch/yap/middleware/registry"
-	"github.com/trusch/yap/middleware/rule"
+	"github.com/trusch/bobbyd/middleware/registry"
+	"github.com/trusch/bobbyd/middleware/rule"
 )
 
 // Manager manages middlewares

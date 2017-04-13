@@ -12,13 +12,14 @@ import (
 
 // Server holds two servers: HTTP and HTTPS
 type Server struct {
-	httpAddr    string
-	httpsAddr   string
-	handler     http.Handler
-	httpServer  *http.Server
-	httpsServer *http.Server
-	certMap     map[string]tls.Certificate
-	certs       []tls.Certificate
+	httpAddr      string
+	httpsAddr     string
+	handler       http.Handler
+	httpServer    *http.Server
+	httpsServer   *http.Server
+	httpsListener net.Listener
+	certMap       map[string]tls.Certificate
+	certs         []tls.Certificate
 }
 
 // New returns a new server
@@ -86,28 +87,30 @@ func (srv *Server) ListenAndServeHTTP() error {
 
 // ListenAndServeHTTPS (re)starts the HTTPS server
 func (srv *Server) ListenAndServeHTTPS() error {
-	if len(srv.certs) == 0 {
-		log.Print("no certificate available")
-		return nil
-	}
 	config := &tls.Config{}
 	config.Certificates = srv.certs
 	config.BuildNameToCertificate()
 	if srv.httpsServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		srv.httpsServer.Close()
 		srv.httpsServer.Shutdown(ctx)
 		cancel()
 		srv.httpsServer = nil
+		time.Sleep(100 * time.Millisecond)
+		log.Print("stopped HTTPS server")
 	}
 	ln, err := net.Listen("tcp", srv.httpsAddr)
 	if err != nil {
 		return err
 	}
-	tlsListener := tls.NewListener(ln, config)
+	srv.httpsListener = ln
+	log.Print("created HTTPS listener")
+	tlsListener := tls.NewListener(srv.httpsListener, config)
 	srv.httpsServer = &http.Server{
 		Addr:    srv.httpAddr,
 		Handler: srv.handler,
 	}
 	go srv.httpsServer.Serve(tlsListener)
+	log.Printf("started HTTPS server with %v certs", len(config.Certificates))
 	return nil
 }

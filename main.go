@@ -21,10 +21,13 @@
 package main
 
 import (
-	"github.com/trusch/yap/cmd"
-	_ "github.com/trusch/yap/middleware/builtin"
+	"log"
+
+	"github.com/trusch/bobbyd/cmd"
+	_ "github.com/trusch/bobbyd/middleware/builtin"
 )
 
 func main() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	cmd.Execute()
 }
