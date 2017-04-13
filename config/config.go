@@ -1,8 +1,8 @@
 package config
 
 import (
-	lbRule "github.com/trusch/yap/loadbalancer/rule"
-	mwRule "github.com/trusch/yap/middleware/rule"
+	lbRule "github.com/trusch/bobbyd/loadbalancer/rule"
+	mwRule "github.com/trusch/bobbyd/middleware/rule"
 )
 
 // Stream is the interface used by the application to get config value updates
