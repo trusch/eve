@@ -1,4 +1,5 @@
-eve.amd64
-eve.arm
-eve-ctl.arm
-eve-ctl.amd64
+bin/eve.amd64
+bin/eve.arm
+bin/eve-ctl.arm
+bin/eve-ctl.amd64
+bin
