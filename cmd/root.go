@@ -103,7 +103,7 @@ func init() {
 	RootCmd.Flags().String("http", ":80", "HTTP Address")
 	RootCmd.Flags().String("https", ":443", "HTTPS Address")
 	RootCmd.Flags().String("etcd", "127.0.0.1:2379", "etcd server address")
-	RootCmd.Flags().Bool("docker", true, "listen for docker events")
+	RootCmd.Flags().Bool("docker", false, "listen for docker events")
 	RootCmd.Flags().String("password", "", "certificate seal password")
 	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eve.yaml)")
 	viper.BindPFlags(RootCmd.Flags())
